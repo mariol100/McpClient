@@ -175,6 +175,58 @@
                                     <canvas id="price-chart"></canvas>
                                 </div>
                             </div>
+
+                            <!-- Technical Indicators Panel -->
+                            <div id="indicators-panel" class="mt-4" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Technical Indicators</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Indicator Selection Buttons -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <div class="btn-group flex-wrap" role="group">
+                                                    <button type="button" class="btn btn-outline-primary" onclick="app.loadIndicator('sma', 20)">
+                                                        SMA (20)
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-primary" onclick="app.loadIndicator('sma', 50)">
+                                                        SMA (50)
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-info" onclick="app.loadIndicator('ema', 20)">
+                                                        EMA (20)
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-success" onclick="app.loadIndicator('rsi', 14)">
+                                                        RSI (14)
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-warning" onclick="app.loadIndicator('macd')">
+                                                        MACD
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger" onclick="app.loadIndicator('bbands', 20)">
+                                                        Bollinger Bands
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Indicator Chart -->
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <canvas id="indicator-chart" style="max-height: 350px;"></canvas>
+                                            </div>
+                                        </div>
+
+                                        <!-- Indicator Details/Interpretation -->
+                                        <div class="row mt-3">
+                                            <div class="col-md-12">
+                                                <div id="indicator-details" class="alert alert-info">
+                                                    <i class="bi bi-info-circle"></i> Select an indicator above to view technical analysis
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

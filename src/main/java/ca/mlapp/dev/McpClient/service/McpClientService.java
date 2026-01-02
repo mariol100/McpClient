@@ -178,13 +178,98 @@ public class McpClientService {
         McpSchema.CallToolResult result = getClient().callTool(
             new McpSchema.CallToolRequest("search-stock-symbols", args)
         );
-        return parseToolResult(result);
+
+        // Parse the raw result (returns List<SymbolSearchResultDTO>)
+        Object rawResult = parseToolResult(result);
+
+        // Wrap in the format expected by frontend: {data: [...], status: "ok"}
+        Map<String, Object> wrappedResult = new LinkedHashMap<>();
+        wrappedResult.put("data", rawResult);
+        wrappedResult.put("status", "ok");
+
+        return wrappedResult;
     }
 
     public Object getApiUsage() {
         log.debug("Calling tool: get-api-usage");
         McpSchema.CallToolResult result = getClient().callTool(
             new McpSchema.CallToolRequest("get-api-usage", Map.of())
+        );
+        return parseToolResult(result);
+    }
+
+    // ==================== Technical Indicator Methods ====================
+
+    public Object getSMA(String symbol, Integer timePeriod, String interval, String seriesType) {
+        log.debug("Calling tool: get-sma with symbol={}, timePeriod={}, interval={}, seriesType={}",
+                symbol, timePeriod, interval, seriesType);
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("symbol", symbol);
+        if (timePeriod != null) args.put("timePeriod", timePeriod);
+        if (interval != null) args.put("interval", interval);
+        if (seriesType != null) args.put("seriesType", seriesType);
+
+        McpSchema.CallToolResult result = getClient().callTool(
+            new McpSchema.CallToolRequest("get-sma", args)
+        );
+        return parseToolResult(result);
+    }
+
+    public Object getEMA(String symbol, Integer timePeriod, String interval, String seriesType) {
+        log.debug("Calling tool: get-ema with symbol={}, timePeriod={}, interval={}, seriesType={}",
+                symbol, timePeriod, interval, seriesType);
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("symbol", symbol);
+        if (timePeriod != null) args.put("timePeriod", timePeriod);
+        if (interval != null) args.put("interval", interval);
+        if (seriesType != null) args.put("seriesType", seriesType);
+
+        McpSchema.CallToolResult result = getClient().callTool(
+            new McpSchema.CallToolRequest("get-ema", args)
+        );
+        return parseToolResult(result);
+    }
+
+    public Object getRSI(String symbol, Integer timePeriod, String interval, String seriesType) {
+        log.debug("Calling tool: get-rsi with symbol={}, timePeriod={}, interval={}, seriesType={}",
+                symbol, timePeriod, interval, seriesType);
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("symbol", symbol);
+        if (timePeriod != null) args.put("timePeriod", timePeriod);
+        if (interval != null) args.put("interval", interval);
+        if (seriesType != null) args.put("seriesType", seriesType);
+
+        McpSchema.CallToolResult result = getClient().callTool(
+            new McpSchema.CallToolRequest("get-rsi", args)
+        );
+        return parseToolResult(result);
+    }
+
+    public Object getMACD(String symbol, String interval, String seriesType) {
+        log.debug("Calling tool: get-macd with symbol={}, interval={}, seriesType={}",
+                symbol, interval, seriesType);
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("symbol", symbol);
+        if (interval != null) args.put("interval", interval);
+        if (seriesType != null) args.put("seriesType", seriesType);
+
+        McpSchema.CallToolResult result = getClient().callTool(
+            new McpSchema.CallToolRequest("get-macd", args)
+        );
+        return parseToolResult(result);
+    }
+
+    public Object getBollingerBands(String symbol, Integer timePeriod, String interval, String seriesType) {
+        log.debug("Calling tool: get-bbands with symbol={}, timePeriod={}, interval={}, seriesType={}",
+                symbol, timePeriod, interval, seriesType);
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("symbol", symbol);
+        if (timePeriod != null) args.put("timePeriod", timePeriod);
+        if (interval != null) args.put("interval", interval);
+        if (seriesType != null) args.put("seriesType", seriesType);
+
+        McpSchema.CallToolResult result = getClient().callTool(
+            new McpSchema.CallToolRequest("get-bbands", args)
         );
         return parseToolResult(result);
     }

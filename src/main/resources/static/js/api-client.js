@@ -66,6 +66,33 @@ class McpApiClient {
         return this.get('/api/market/api-usage');
     }
 
+    // ==================== Technical Indicator Endpoints ====================
+
+    async getSMA(symbol, timePeriod = 20, interval = 'daily', seriesType = 'close') {
+        let url = `/api/market/indicators/sma/${symbol}?timePeriod=${timePeriod}&interval=${interval}&seriesType=${seriesType}`;
+        return this.get(url);
+    }
+
+    async getEMA(symbol, timePeriod = 20, interval = 'daily', seriesType = 'close') {
+        let url = `/api/market/indicators/ema/${symbol}?timePeriod=${timePeriod}&interval=${interval}&seriesType=${seriesType}`;
+        return this.get(url);
+    }
+
+    async getRSI(symbol, timePeriod = 14, interval = 'daily', seriesType = 'close') {
+        let url = `/api/market/indicators/rsi/${symbol}?timePeriod=${timePeriod}&interval=${interval}&seriesType=${seriesType}`;
+        return this.get(url);
+    }
+
+    async getMACD(symbol, interval = 'daily', seriesType = 'close') {
+        let url = `/api/market/indicators/macd/${symbol}?interval=${interval}&seriesType=${seriesType}`;
+        return this.get(url);
+    }
+
+    async getBollingerBands(symbol, timePeriod = 20, interval = 'daily', seriesType = 'close') {
+        let url = `/api/market/indicators/bbands/${symbol}?timePeriod=${timePeriod}&interval=${interval}&seriesType=${seriesType}`;
+        return this.get(url);
+    }
+
     // ==================== Prompts Endpoints ====================
 
     async getStockAnalysisPrompt(symbol) {

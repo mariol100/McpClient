@@ -15,6 +15,9 @@ class McpClientApp {
         this.historySortDirection = 'desc';
         this.historyData = [];
         this.viewDetailsModal = null;
+        this.currentSymbol = null;
+        this.priceChart = null;
+        this.indicatorChart = null;
         this.init();
     }
 
@@ -277,6 +280,7 @@ class McpClientApp {
 
     async loadStockDetails(symbol) {
         try {
+            this.currentSymbol = symbol;
             const quote = await apiClient.getQuote(symbol);
             this.renderQuoteDetails(quote);
             document.getElementById('stock-details').style.display = 'block';
@@ -285,16 +289,20 @@ class McpClientApp {
             // Note: Using 1day interval by default
             const historical = await apiClient.getHistoricalData(symbol, '1day', 30);
             this.renderPriceChart(historical);
+
+            // Show technical indicators panel
+            document.getElementById('indicators-panel').style.display = 'block';
         } catch (error) {
             this.showToast('Error loading stock details: ' + error.message, 'error');
         }
     }
 
     renderQuoteDetails(quote) {
+        const price = parseFloat(quote.price || quote.close || 0);
         const html = `
             <h5>${quote.symbol} - ${quote.name || 'N/A'}</h5>
-            <p><strong>Price:</strong> $${(quote.price || quote.close || 0).toFixed(2)}</p>
-            <p><strong>Change:</strong> ${quote.change || 'N/A'} (${quote.percent_change || 'N/A'}%)</p>
+            <p><strong>Price:</strong> $${price.toFixed(2)}</p>
+            <p><strong>Change:</strong> ${quote.change || 'N/A'} (${quote.percent_change || 'N/A'})</p>
             <p><strong>Volume:</strong> ${quote.volume || 'N/A'}</p>
         `;
         document.getElementById('quote-details').innerHTML = html;
@@ -959,6 +967,291 @@ class McpClientApp {
         } catch (error) {
             this.showToast('Error deleting record: ' + error.message, 'error');
         }
+    }
+
+    // ==================== Technical Indicator Methods ====================
+
+    async loadIndicator(type, period) {
+        if (!this.currentSymbol) {
+            this.showToast('No stock selected', 'error');
+            return;
+        }
+
+        try {
+            let data;
+            let indicatorName;
+
+            switch(type) {
+                case 'sma':
+                    data = await apiClient.getSMA(this.currentSymbol, period);
+                    indicatorName = `SMA (${period})`;
+                    break;
+                case 'ema':
+                    data = await apiClient.getEMA(this.currentSymbol, period);
+                    indicatorName = `EMA (${period})`;
+                    break;
+                case 'rsi':
+                    data = await apiClient.getRSI(this.currentSymbol, period);
+                    indicatorName = `RSI (${period})`;
+                    break;
+                case 'macd':
+                    data = await apiClient.getMACD(this.currentSymbol);
+                    indicatorName = 'MACD';
+                    break;
+                case 'bbands':
+                    data = await apiClient.getBollingerBands(this.currentSymbol, period);
+                    indicatorName = `Bollinger Bands (${period})`;
+                    break;
+                default:
+                    this.showToast('Unknown indicator type', 'error');
+                    return;
+            }
+
+            this.renderIndicatorChart(data, indicatorName, type);
+            this.renderIndicatorDetails(data, indicatorName, type);
+
+        } catch (error) {
+            this.showToast('Error loading indicator: ' + error.message, 'error');
+        }
+    }
+
+    renderIndicatorChart(data, name, type) {
+        const canvas = document.getElementById('indicator-chart');
+        const ctx = canvas.getContext('2d');
+
+        // Clear existing chart
+        if (this.indicatorChart) {
+            this.indicatorChart.destroy();
+        }
+
+        if (!data || !data.technicalAnalysis) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
+        // Extract the indicator data key (e.g., "Technical Analysis: SMA")
+        const analysisKey = Object.keys(data.technicalAnalysis).find(key =>
+            key.startsWith('Technical Analysis:')
+        );
+
+        if (!analysisKey) {
+            this.showToast('Invalid indicator data format', 'error');
+            return;
+        }
+
+        const indicatorData = data.technicalAnalysis[analysisKey];
+        const dates = Object.keys(indicatorData).reverse().slice(0, 100); // Last 100 points
+
+        let datasets = [];
+
+        if (type === 'sma' || type === 'ema') {
+            // Single line for SMA/EMA
+            const values = dates.map(date => parseFloat(indicatorData[date][type.toUpperCase()]));
+            datasets.push({
+                label: name,
+                data: values,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            });
+
+        } else if (type === 'rsi') {
+            // RSI with overbought/oversold lines
+            const values = dates.map(date => parseFloat(indicatorData[date].RSI));
+            datasets.push({
+                label: 'RSI',
+                data: values,
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1,
+                fill: false
+            });
+            // Overbought line (70)
+            datasets.push({
+                label: 'Overbought (70)',
+                data: Array(dates.length).fill(70),
+                borderColor: 'rgba(255, 99, 132, 0.5)',
+                borderDash: [5, 5],
+                fill: false
+            });
+            // Oversold line (30)
+            datasets.push({
+                label: 'Oversold (30)',
+                data: Array(dates.length).fill(30),
+                borderColor: 'rgba(75, 192, 192, 0.5)',
+                borderDash: [5, 5],
+                fill: false
+            });
+
+        } else if (type === 'macd') {
+            // MACD: MACD line, Signal line, Histogram
+            const macdValues = dates.map(date => parseFloat(indicatorData[date].MACD));
+            const signalValues = dates.map(date => parseFloat(indicatorData[date].MACD_Signal));
+            const histValues = dates.map(date => parseFloat(indicatorData[date].MACD_Hist));
+
+            datasets.push({
+                label: 'MACD',
+                data: macdValues,
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1,
+                fill: false
+            });
+            datasets.push({
+                label: 'Signal',
+                data: signalValues,
+                borderColor: 'rgb(255, 159, 64)',
+                tension: 0.1,
+                fill: false
+            });
+            datasets.push({
+                label: 'Histogram',
+                data: histValues,
+                type: 'bar',
+                backgroundColor: 'rgba(75, 192, 192, 0.5)'
+            });
+
+        } else if (type === 'bbands') {
+            // Bollinger Bands: Upper, Middle, Lower
+            const upperValues = dates.map(date => parseFloat(indicatorData[date].Real_Upper_Band));
+            const middleValues = dates.map(date => parseFloat(indicatorData[date].Real_Middle_Band));
+            const lowerValues = dates.map(date => parseFloat(indicatorData[date].Real_Lower_Band));
+
+            datasets.push({
+                label: 'Upper Band',
+                data: upperValues,
+                borderColor: 'rgba(255, 99, 132, 0.8)',
+                tension: 0.1,
+                fill: false
+            });
+            datasets.push({
+                label: 'Middle Band (SMA)',
+                data: middleValues,
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1,
+                fill: false
+            });
+            datasets.push({
+                label: 'Lower Band',
+                data: lowerValues,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1,
+                fill: '+1'
+            });
+        }
+
+        this.indicatorChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `${this.currentSymbol} - ${name}`
+                    },
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+
+    renderIndicatorDetails(data, name, type) {
+        const detailsDiv = document.getElementById('indicator-details');
+
+        if (!data || !data.technicalAnalysis) {
+            detailsDiv.innerHTML = '<i class="bi bi-info-circle"></i> No data available';
+            detailsDiv.className = 'alert alert-warning';
+            return;
+        }
+
+        const analysisKey = Object.keys(data.technicalAnalysis).find(key =>
+            key.startsWith('Technical Analysis:')
+        );
+        const indicatorData = data.technicalAnalysis[analysisKey];
+        const latestDate = Object.keys(indicatorData)[0]; // Most recent date
+        const latestValues = indicatorData[latestDate];
+
+        let interpretation = '';
+        let alertClass = 'alert-info';
+
+        if (type === 'sma' || type === 'ema') {
+            const value = latestValues[type.toUpperCase()];
+            interpretation = `
+                <strong>${name}</strong><br>
+                Latest value: ${parseFloat(value).toFixed(2)}<br>
+                <small class="text-muted">Moving averages help identify trend direction.
+                Price above MA suggests uptrend, below suggests downtrend.</small>
+            `;
+
+        } else if (type === 'rsi') {
+            const rsi = parseFloat(latestValues.RSI);
+            if (rsi > 70) {
+                interpretation = `
+                    <strong>RSI: ${rsi.toFixed(2)}</strong> - <span class="badge bg-danger">Overbought</span><br>
+                    <small>Stock may be overvalued. Consider this as a potential sell signal.</small>
+                `;
+                alertClass = 'alert-danger';
+            } else if (rsi < 30) {
+                interpretation = `
+                    <strong>RSI: ${rsi.toFixed(2)}</strong> - <span class="badge bg-success">Oversold</span><br>
+                    <small>Stock may be undervalued. Consider this as a potential buy signal.</small>
+                `;
+                alertClass = 'alert-success';
+            } else {
+                interpretation = `
+                    <strong>RSI: ${rsi.toFixed(2)}</strong> - <span class="badge bg-secondary">Neutral</span><br>
+                    <small>Stock is in neutral territory. No strong buy or sell signal.</small>
+                `;
+            }
+
+        } else if (type === 'macd') {
+            const macd = parseFloat(latestValues.MACD);
+            const signal = parseFloat(latestValues.MACD_Signal);
+            const hist = parseFloat(latestValues.MACD_Hist);
+
+            if (hist > 0) {
+                interpretation = `
+                    <strong>MACD</strong><br>
+                    MACD: ${macd.toFixed(4)}, Signal: ${signal.toFixed(4)}, Histogram: ${hist.toFixed(4)}<br>
+                    <span class="badge bg-success">Bullish Signal</span><br>
+                    <small>MACD above signal line suggests upward momentum.</small>
+                `;
+                alertClass = 'alert-success';
+            } else {
+                interpretation = `
+                    <strong>MACD</strong><br>
+                    MACD: ${macd.toFixed(4)}, Signal: ${signal.toFixed(4)}, Histogram: ${hist.toFixed(4)}<br>
+                    <span class="badge bg-danger">Bearish Signal</span><br>
+                    <small>MACD below signal line suggests downward momentum.</small>
+                `;
+                alertClass = 'alert-danger';
+            }
+
+        } else if (type === 'bbands') {
+            const upper = parseFloat(latestValues.Real_Upper_Band);
+            const middle = parseFloat(latestValues.Real_Middle_Band);
+            const lower = parseFloat(latestValues.Real_Lower_Band);
+
+            interpretation = `
+                <strong>Bollinger Bands</strong><br>
+                Upper: ${upper.toFixed(2)}, Middle: ${middle.toFixed(2)}, Lower: ${lower.toFixed(2)}<br>
+                <small>Bands show volatility. Price near upper band may indicate overbought,
+                near lower band may indicate oversold. Wider bands suggest higher volatility.</small>
+            `;
+        }
+
+        detailsDiv.innerHTML = `<i class="bi bi-lightbulb"></i> ${interpretation}`;
+        detailsDiv.className = `alert ${alertClass}`;
     }
 }
 
