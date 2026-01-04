@@ -315,6 +315,17 @@ public class McpClientService {
         return extractPromptText(result);
     }
 
+    public String getStockSignalAnalysisPrompt(String symbol) {
+        log.debug("Getting stock-signal-analysis with symbol={}", symbol);
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("symbol", symbol);
+
+        McpSchema.GetPromptResult result = getClient().getPrompt(
+            new McpSchema.GetPromptRequest("stock-signal-analysis", args)
+        );
+        return extractPromptText(result);
+    }
+
     // ==================== Resource Methods ====================
 
     public String getStockResource(String symbol) {

@@ -60,6 +60,14 @@ public class PromptsController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/stock-signal-analysis/{symbol}")
+    public ResponseEntity<PromptResult> getStockSignalAnalysis(@PathVariable String symbol) {
+        log.info("GET /api/prompts/stock-signal-analysis/{}", symbol);
+        String content = mcpService.getStockSignalAnalysisPrompt(symbol);
+        PromptResult result = new PromptResult("stock-signal-analysis-prompt", content);
+        return ResponseEntity.ok(result);
+    }
+
     // ==================== LLM Integration Endpoints ====================
 
     @PostMapping("/generate-ai-response")

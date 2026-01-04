@@ -111,6 +111,10 @@ class McpApiClient {
         return this.get(url);
     }
 
+    async getStockSignalAnalysisPrompt(symbol) {
+        return this.get(`/api/prompts/stock-signal-analysis/${symbol}`);
+    }
+
     // ==================== LLM Integration Endpoints ====================
 
     async generateAiResponse(llmRequest) {

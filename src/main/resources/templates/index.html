@@ -411,6 +411,59 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Stock Signal Analysis -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">Stock Signal Analysis (Multi-Signal Buy/Sell/Hold)</div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- Left: Prompt Generation -->
+                                            <div class="col-md-5">
+                                                <h6>Input</h6>
+                                                <div class="mb-3">
+                                                    <label for="stock-signal-analysis-symbol" class="form-label">Stock Symbol</label>
+                                                    <input type="text" class="form-control" id="stock-signal-analysis-symbol" placeholder="e.g., AAPL">
+                                                </div>
+                                                <button class="btn btn-primary" onclick="app.analyzeStockSignalsWithAI()">
+                                                    Analyze All Signals with AI
+                                                </button>
+                                                <div id="stock-signal-analysis-prompt" class="mt-3" style="display:none;">
+                                                    <h6>Generated Prompt:</h6>
+                                                    <pre class="prompt-preview bg-light p-2" style="max-height: 200px; overflow-y: auto;"></pre>
+                                                </div>
+                                            </div>
+
+                                            <!-- Divider -->
+                                            <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                                <div class="vr" style="height: 100%; width: 2px;"></div>
+                                            </div>
+
+                                            <!-- Right: AI Response -->
+                                            <div class="col-md-6">
+                                                <h6>AI Response</h6>
+                                                <div id="stock-signal-analysis-response" class="ai-response-container">
+                                                    <div class="text-muted">Click "Analyze All Signals with AI" to get comprehensive multi-signal analysis...</div>
+                                                </div>
+                                                <div id="stock-signal-analysis-loading" class="text-center" style="display:none;">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <p class="mt-2">Analyzing all signals with AI...</p>
+                                                </div>
+                                                <div id="stock-signal-analysis-save-container" style="display:none;" class="mt-3">
+                                                    <button class="btn btn-success btn-sm" onclick="app.savePromptResponse('stock-signal-analysis')">
+                                                        Save this Analysis
+                                                    </button>
+                                                    <span id="stock-signal-analysis-save-status" class="ms-2 text-muted"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- History Section -->

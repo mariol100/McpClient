@@ -8,7 +8,8 @@ class McpClientApp {
         this.currentPromptData = {
             'stock-analysis': null,
             'portfolio-review': null,
-            'investment-advice': null
+            'investment-advice': null,
+            'stock-signal-analysis': null
         };
         this.historyCurrentPage = 0;
         this.historyPageSize = 25;
@@ -604,6 +605,81 @@ class McpClientApp {
         }
     }
 
+    async analyzeStockSignalsWithAI() {
+        const symbol = document.getElementById('stock-signal-analysis-symbol').value;
+        if (!symbol) {
+            this.showToast('Please enter a stock symbol', 'warning');
+            return;
+        }
+
+        const provider = document.getElementById('llm-provider-select').value;
+        if (!provider) {
+            this.showToast('No LLM provider available', 'error');
+            return;
+        }
+
+        const responseContainer = document.getElementById('stock-signal-analysis-response');
+        const loadingDiv = document.getElementById('stock-signal-analysis-loading');
+        const promptDiv = document.getElementById('stock-signal-analysis-prompt');
+
+        try {
+            // Show loading
+            responseContainer.style.display = 'none';
+            loadingDiv.style.display = 'block';
+
+            // Generate prompt from MCP server
+            const promptResult = await apiClient.getStockSignalAnalysisPrompt(symbol);
+
+            // Show the prompt that will be sent
+            promptDiv.querySelector('pre').textContent = promptResult.content;
+            promptDiv.style.display = 'block';
+
+            // Send to LLM
+            const llmRequest = {
+                provider: provider,
+                prompt: promptResult.content
+            };
+
+            const llmResponse = await apiClient.generateAiResponse(llmRequest);
+
+            // Display response
+            loadingDiv.style.display = 'none';
+            responseContainer.style.display = 'block';
+            responseContainer.classList.add('has-response');
+            responseContainer.innerHTML = `
+                ${llmResponse.response}
+                <div class="response-meta">
+                    <strong>Model:</strong> ${llmResponse.model} |
+                    <strong>Provider:</strong> ${llmResponse.provider} |
+                    <strong>Tokens:</strong> ${llmResponse.tokensUsed} |
+                    <strong>Time:</strong> ${llmResponse.responseTimeMs}ms
+                </div>
+            `;
+
+            // Store prompt data for saving
+            this.currentPromptData['stock-signal-analysis'] = {
+                promptType: 'stock-signal-analysis',
+                prompt: promptResult.content,
+                provider: llmResponse.provider,
+                model: llmResponse.model,
+                response: llmResponse.response,
+                tokensUsed: llmResponse.tokensUsed,
+                responseTimeMs: llmResponse.responseTimeMs,
+                inputParameters: { symbol: symbol }
+            };
+
+            // Show save button
+            document.getElementById('stock-signal-analysis-save-container').style.display = 'block';
+
+            this.showToast('Stock signal analysis completed', 'success');
+        } catch (error) {
+            loadingDiv.style.display = 'none';
+            responseContainer.style.display = 'block';
+            responseContainer.innerHTML = `<div class="text-danger">Error: ${error.message}</div>`;
+            this.showToast('Error generating AI response: ' + error.message, 'error');
+        }
+    }
+
     // ==================== Resources ====================
 
     async getStockResource() {
@@ -864,7 +940,8 @@ class McpClientApp {
         const types = {
             'stock-analysis': 'Stock Analysis',
             'portfolio-review': 'Portfolio Review',
-            'investment-advice': 'Investment Advice'
+            'investment-advice': 'Investment Advice',
+            'stock-signal-analysis': 'Stock Signal Analysis'
         };
         return types[type] || type;
     }
